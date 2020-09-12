@@ -1,0 +1,15 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: false
+  pre_tasks:
+  - name: "Pre-flight vars check"
+    assert:
+      that: "{{item is defined}}"
+    with_items:
+    - "{{apache_image}}"
+    - "{{internal_image}}"
+    - "{{dns_zone}}"
+    - "{{ocp_domain}}"
+  roles:
+  - role: role_conformance_test

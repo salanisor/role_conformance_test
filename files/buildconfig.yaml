@@ -1,0 +1,33 @@
+---
+apiVersion: "v1"
+kind: "BuildConfig"
+metadata:
+  name: "conformance-build"
+  labels:
+    service: web
+spec:
+  successfulBuildsHistoryLimit: 3
+  failedBuildsHistoryLimit: 3
+  nodeSelector: null
+  runPolicy: Serial
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange: {}
+  source:
+    dockerfile: "{{apache_image}}\nRUN echo 'OpenShift up and running' > /var/www/html/index.html"
+  strategy:
+    type: Docker
+    dockerstrategy: {}
+  output:
+    to:
+      kind: "ImageStream"
+      name: "conformance-img"
+  postCommit: {}
+  resources:
+    limits:
+      cpu: "500m"
+      memory: 500Mi
+    requests:
+      cpu: "500m"
+      memory: 500Mi

@@ -1,0 +1,7 @@
+---
+- debug:
+    msg: "Removing components."
+- command: >
+    oc delete all --all -n conformance-{{random_number}}
+- command: >
+    oc delete project conformance-{{random_number}}

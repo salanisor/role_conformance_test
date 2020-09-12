@@ -1,0 +1,170 @@
+# Task assumes access to OpenShift for now is available locally on control node.
+- name: "Set conformance project name"
+  set_fact:
+    random_number: "{{1000|random|string}}"
+  run_once: true
+- name: "Create conformance namespace"
+  k8s:
+    name: "conformance-{{random_number}}"
+    api_version: v1
+    kind: Namespace
+    state: present
+# Required for the BuildConfig output
+- name: "Create an imagestream"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ImageStream
+      metadata:
+        name: conformance-img
+        namespace: conformance-{{random_number}}
+        labels:
+          service: web
+- name: "Create a Service object"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: apache-conformance-svc
+        namespace: conformance-{{random_number}}
+        labels:
+          service: web
+      spec:
+        selector:
+          service: web
+        ports:
+          - protocol: TCP
+            targetPort: 8080
+            name: port-8080-tcp
+            port: 8080
+- name: "Create a configmap object"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: apache-conformance-cm
+        namespace: conformance-{{random_number}}
+        labels:
+          service: web
+      data:
+        index.html: |
+          <html>
+            <head>
+              <title>OpenShift is up and running.</title>
+            </head>
+            <body>
+              <h1>OpenShift is up and running.</h1>
+            </body>
+          </html>
+- name: "Build an Apache image using BuildConfig"
+  k8s:
+    state: present
+    wait: True
+    wait_sleep: 10
+    wait_timeout: 300
+    wait_condition:
+      type: Complete
+      status: True
+    definition:
+      apiVersion: v1
+      kind: "BuildConfig"
+      metadata:
+        name: apache-conformance-build
+        namespace: "conformance-{{random_number}}"
+        labels:
+          service: web
+      spec:
+        successfulBuildsHistoryLimit: 3
+        failedBuildsHistoryLimit: 3
+        nodeSelector: null
+        runPolicy: Serial
+        triggers:
+          - type: ConfigChange
+          - type: ImageChange
+            imageChange: {}
+        source:
+          dockerfile: "FROM {{apache_image}}\nRUN echo 'OpenShift up and running' > /var/www/html/index.html"
+        strategy:
+          type: Docker
+          dockerstrategy: {}
+        output:
+          to:
+            kind: "ImageStream"
+            name: "conformance-img"
+        postCommit: {}
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 500Mi
+          requests:
+            cpu: "500m"
+            memory: 500Mi
+  ignore_errors: True
+- name: "Check if build was successful"
+  #shell: "oc get build apache-conformance-build-1 -o template --template '{{.status.phase}}'"
+  shell: oc describe build apache-conformance-build-1 -n conformance-{{random_number}} |grep Status
+  register: build
+  failed_when: '"Complete" not in build.stdout'
+- name: "Create an Apache pod listening on tcp/8080"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: apache-conformance-pod
+        namespace: "conformance-{{random_number}}"
+        labels:
+          service: web
+      spec:
+        selector:
+          service: web
+        containers:
+          - name: "apache-conformance-{{random_number}}"
+            image: "{{internal_image}}"
+            imagePullPolicy: IfNotPresent
+            ports:
+              - containerPort: 8080
+            resources:
+              limits:
+                cpu: "200m"
+                memory: 200Mi
+              requests:
+                cpu: "200m"
+                memory: 200Mi
+- name: "Create a route to the Apache pod listening on tcp/8080"
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Route
+      metadata:
+        name: apache-conformance-route
+        namespace: "conformance-{{random_number}}"
+        labels:
+          service: web
+      spec:
+        host: "www.apps.{{ocp_domain}}.{{dns_zone}}"
+        to:
+          kind: Service
+          name: apache-conformance-svc
+  register: route
+- pause:
+    seconds: 5
+- name: "Curl route to verify service"
+  uri:
+    url: "http://www.apps.{{ocp_domain}}.{{dns_zone}}"
+    return_content: true
+    method: GET
+    status_code: 200
+    headers:
+      Host: www.apps.{{ocp_domain}}.{{dns_zone}}
+  register: curl_resp
+- debug:
+    msg: "Conformance deployment verified."
+  when: '"OpenShift is up and running" in curl_resp.content'

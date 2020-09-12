@@ -1,0 +1,15 @@
+# tasks file for role_conformance_test
+# Requirements
+- name: "Check for tool requirements"
+  block:
+  - yum:
+      name: buildah
+      state: latest
+  - command: 'which oc'
+  vars:
+    ansible_python_interpreter: /usr/bin/python2
+- name: "Run simple conformance test"
+  include_tasks: deploy_conformance_test.yaml
+- name: "Remove test objects"
+  include_tasks: remove_objects.yaml
+  when: ('"OpenShift is up and running" in curl_resp.content')
