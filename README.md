@@ -31,6 +31,7 @@ python3 -m pip install -r requirements.txt
 ```
 
 If you're using RHEL 7 enable `rhel-7-server-ose-4.5-rpms` and `yum install python2-openshift`
+
 For RHEL 8 you'll need to enable the [EPEL](https://fedoraproject.org/wiki/EPEL) repository to install `yum install python3-openshift`
 
 Example Playbook
