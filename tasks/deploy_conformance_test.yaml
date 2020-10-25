@@ -154,8 +154,6 @@
           kind: Service
           name: apache-conformance-svc
   register: route
-- pause:
-    seconds: 5
 - name: "Curl route to verify service"
   uri:
     url: "http://www.apps.{{ocp_domain}}.{{dns_zone}}"
@@ -165,6 +163,9 @@
     headers:
       Host: www.apps.{{ocp_domain}}.{{dns_zone}}
   register: curl_resp
+  until: curl_resp.content.find("OpenShift is up and running")
+  retries: 10
+  delay: 5
 - debug:
     msg: "Conformance deployment verified."
   when: '"OpenShift is up and running" in curl_resp.content'

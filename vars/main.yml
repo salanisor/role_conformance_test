@@ -1,6 +1,2 @@
 ---
 # vars file for role_conformance_test
-apache_image: 'helper.ocp4.freebsd.us:5000/rhscl/httpd-24-rhel7:latest'
-internal_image: "image-registry.openshift-image-registry.svc:5000/conformance-{{random_number}}/conformance-img:latest"
-dns_zone: 'freebsd.us'
-ocp_domain: 'ocp4'

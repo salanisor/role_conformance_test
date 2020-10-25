@@ -2,12 +2,13 @@
 # Requirements
 - name: "Check for tool requirements"
   block:
-  - yum:
+  - dnf:
       name: buildah
       state: latest
+    become: yes
   - command: 'which oc'
-  vars:
-    ansible_python_interpreter: /usr/bin/python2
+    #vars:
+    #ansible_python_interpreter: /usr/bin/python2
 - name: "Run simple conformance test"
   include_tasks: deploy_conformance_test.yaml
 - name: "Remove test objects"

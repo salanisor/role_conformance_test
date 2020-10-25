@@ -3,6 +3,9 @@
   connection: local
   gather_facts: false
   pre_tasks:
+  - name: "Generate random number"
+    set_fact:
+      random_number: "{{1000|random}}"
   - name: "Pre-flight vars check"
     assert:
       that: "{{item is defined}}"
@@ -12,4 +15,4 @@
     - "{{dns_zone}}"
     - "{{ocp_domain}}"
   roles:
-  - role: role_conformance_test
+  - role: "{{playbook_dir}}"
