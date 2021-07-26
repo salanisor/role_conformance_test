@@ -3,5 +3,5 @@
 simple: false
 apache_image: 'registry.redhat.io/rhscl/httpd-24-rhel7:latest'
 internal_image: "image-registry.openshift-image-registry.svc:5000/conformance-{{random_number}}/conformance-img:latest"
-dns_zone: 'freebsd.us'
+dns_zone: 'keights.org'
 ocp_domain: 'ocp4'

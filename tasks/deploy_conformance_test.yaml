@@ -164,7 +164,8 @@
       Host: www.apps.{{ocp_domain}}.{{dns_zone}}
   register: curl_resp
   until: curl_resp.content.find("OpenShift is up and running")
-  retries: 10
+  retries: 30
+  ignore_errors: yes
   delay: 5
 - debug:
     msg: "Conformance deployment verified."
